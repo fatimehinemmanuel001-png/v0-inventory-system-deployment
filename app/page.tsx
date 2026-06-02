@@ -743,61 +743,132 @@ export default function App() {
   const [sales,setSales]=useState(INIT_SALES);
   const [orders,setOrders]=useState(INIT_PURCHASE_ORDERS);
   const [history,setHistory]=useState(INIT_HISTORY);
-  const addHistory=h=>setHistory(prev=>[...prev,{ id:uid(),...h }]);
+  const addHistory=(h: Record<string, unknown>)=>setHistory(prev=>[...prev,{ id:uid(),...h }]);
   const lowCount=products.filter(p=>p.qty<=p.lowStock).length;
 
   const NAV=[
     { id:"dashboard",  label:"Dashboard",    icon:IC.dash   },
     { id:"products",   label:"Products",     icon:IC.tag    },
     { id:"pos",        label:"POS",          icon:IC.pos    },
-    { id:"orders",     label:"Purchase Orders", icon:IC.po  },
-    { id:"history",    label:"Stock History",icon:IC.history},
+    { id:"orders",     label:"Orders", icon:IC.po  },
+    { id:"history",    label:"History",icon:IC.history},
     { id:"suppliers",  label:"Suppliers",    icon:IC.people },
     { id:"reports",    label:"Reports",      icon:IC.chart  },
-    { id:"ai",         label:"AI Analyst",   icon:IC.ai     },
+    { id:"ai",         label:"AI",   icon:IC.ai     },
   ];
 
+  const handleNavClick = (id: string) => {
+    setPage(id);
+  };
+
+  const renderPage = () => {
+    switch(page) {
+      case "dashboard": return <Dashboard products={products} sales={sales}/>;
+      case "products": return <Products products={products} setProducts={setProducts}/>;
+      case "pos": return <POS products={products} setProducts={setProducts} setSales={setSales} addHistory={addHistory}/>;
+      case "orders": return <PurchaseOrders orders={orders} setOrders={setOrders} products={products} setProducts={setProducts} suppliers={suppliers} addHistory={addHistory}/>;
+      case "history": return <StockHistory history={history} products={products}/>;
+      case "suppliers": return <Suppliers suppliers={suppliers} setSuppliers={setSuppliers}/>;
+      case "reports": return <Reports sales={sales} products={products}/>;
+      case "ai": return <AIAssistant products={products} sales={sales} orders={orders}/>;
+      default: return <Dashboard products={products} sales={sales}/>;
+    }
+  };
+
   return(
-    <div style={{ display:"flex", minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif" }}>
-      {/* Sidebar */}
-      <div style={{ width:210, background:C.surface, borderRight:`1px solid ${C.border}`, display:"flex", flexDirection:"column", flexShrink:0 }}>
-        <div style={{ padding:"22px 18px 18px", borderBottom:`1px solid ${C.border}` }}>
-          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
-            <div style={{ width:34,height:34,borderRadius:8,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center" }}><Icon d={IC.pkg} size={18} color="#fff" sw={2.5}/></div>
-            <div><div style={{ fontSize:15,fontWeight:900,lineHeight:1 }}>StockHQ</div><div style={{ fontSize:10,color:C.textMuted,marginTop:2,letterSpacing:"0.05em" }}>PRO</div></div>
-          </div>
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif", paddingBottom:70 }}>
+      {/* Header */}
+      <header style={{ 
+        position:"sticky", 
+        top:0, 
+        zIndex:100, 
+        background:C.surface, 
+        borderBottom:`1px solid ${C.border}`,
+        padding:"12px 16px",
+        display:"flex",
+        alignItems:"center",
+        gap:12
+      }}>
+        <div style={{ width:32,height:32,borderRadius:8,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center" }}>
+          <Icon d={IC.pkg} size={16} color="#fff" sw={2.5}/>
         </div>
-        <nav style={{ flex:1, padding:"10px 6px" }}>
-          {NAV.map(n=>{ const active=page===n.id; return(
-            <button key={n.id} onClick={()=>setPage(n.id)} style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:8,border:"none",cursor:"pointer",background:active?C.accentDim:"transparent",color:active?C.accent:C.textMuted,fontFamily:"inherit",fontSize:13,fontWeight:active?700:500,marginBottom:1,textAlign:"left",transition:"all 0.13s" }}
-              onMouseEnter={e=>{ if(!active)e.currentTarget.style.background=C.surfaceAlt; }} onMouseLeave={e=>{ if(!active)e.currentTarget.style.background="transparent"; }}>
-              <Icon d={n.icon} size={16} color={active?C.accent:C.textMuted}/>
-              {n.label}
-              {n.id==="products"&&lowCount>0&&<span style={{ marginLeft:"auto",background:C.red,color:"#fff",borderRadius:10,padding:"1px 6px",fontSize:10,fontWeight:800 }}>{lowCount}</span>}
-              {n.id==="ai"&&<span style={{ marginLeft:"auto",background:C.purple+"33",color:C.purple,borderRadius:10,padding:"1px 6px",fontSize:9,fontWeight:800,letterSpacing:"0.05em" }}>AI</span>}
+        <div>
+          <div style={{ fontSize:14,fontWeight:900,lineHeight:1 }}>StockHQ</div>
+          <div style={{ fontSize:9,color:C.textMuted,marginTop:1,letterSpacing:"0.05em" }}>PRO</div>
+        </div>
+        {lowCount > 0 && (
+          <div style={{ marginLeft:"auto", background:C.red+"22", border:`1px solid ${C.red}44`, borderRadius:20, padding:"4px 10px", display:"flex", alignItems:"center", gap:6 }}>
+            <Icon d={IC.alert} size={12} color={C.red}/>
+            <span style={{ color:C.red, fontSize:11, fontWeight:700 }}>{lowCount} low</span>
+          </div>
+        )}
+      </header>
+
+      {/* Main Content */}
+      <main style={{ padding:"20px 16px 24px" }}>
+        {renderPage()}
+      </main>
+
+      {/* Bottom Tab Navigation */}
+      <nav style={{ 
+        position:"fixed", 
+        bottom:0, 
+        left:0, 
+        right:0, 
+        zIndex:100,
+        background:C.surface, 
+        borderTop:`1px solid ${C.border}`,
+        display:"flex",
+        justifyContent:"space-around",
+        alignItems:"center",
+        padding:"6px 0 10px",
+        paddingBottom:"max(10px, env(safe-area-inset-bottom))"
+      }}>
+        {NAV.map(n => {
+          const active = page === n.id;
+          return (
+            <button 
+              key={n.id}
+              type="button"
+              onClick={() => handleNavClick(n.id)}
+              style={{ 
+                flex:1,
+                display:"flex", 
+                flexDirection:"column", 
+                alignItems:"center", 
+                gap:3,
+                padding:"6px 4px",
+                border:"none",
+                background:"transparent",
+                cursor:"pointer",
+                WebkitTapHighlightColor:"transparent",
+                touchAction:"manipulation"
+              }}
+            >
+              <div style={{
+                width:36,
+                height:36,
+                borderRadius:10,
+                display:"flex",
+                alignItems:"center",
+                justifyContent:"center",
+                background: active ? C.accent : "transparent",
+                transition:"background 0.15s"
+              }}>
+                <Icon d={n.icon} size={18} color={active ? "#fff" : C.textMuted}/>
+              </div>
+              <span style={{ 
+                fontSize:9, 
+                fontWeight:active ? 700 : 500, 
+                color: active ? C.accent : C.textMuted,
+                fontFamily:"inherit"
+              }}>
+                {n.label}
+              </span>
             </button>
-          ); })}
-        </nav>
-        <div style={{ padding:"14px 18px", borderTop:`1px solid ${C.border}` }}>
-          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-            <div style={{ width:30,height:30,borderRadius:"50%",background:C.accentDim,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14 }}>👤</div>
-            <div><div style={{ fontSize:12,fontWeight:700 }}>Admin</div><div style={{ fontSize:10,color:C.textMuted }}>Owner</div></div>
-          </div>
-        </div>
-      </div>
-      {/* Main */}
-      <div style={{ flex:1, overflow:"auto" }}>
-        <div style={{ padding:"28px 28px 48px" }}>
-          {page==="dashboard" && <Dashboard products={products} sales={sales}/>}
-          {page==="products"  && <Products products={products} setProducts={setProducts}/>}
-          {page==="pos"       && <POS products={products} setProducts={setProducts} setSales={setSales} addHistory={addHistory}/>}
-          {page==="orders"    && <PurchaseOrders orders={orders} setOrders={setOrders} products={products} setProducts={setProducts} suppliers={suppliers} addHistory={addHistory}/>}
-          {page==="history"   && <StockHistory history={history} products={products}/>}
-          {page==="suppliers" && <Suppliers suppliers={suppliers} setSuppliers={setSuppliers}/>}
-          {page==="reports"   && <Reports sales={sales} products={products}/>}
-          {page==="ai"        && <AIAssistant products={products} sales={sales} orders={orders}/>}
-        </div>
-      </div>
+          );
+        })}
+      </nav>
     </div>
   );
 }
