@@ -563,18 +563,34 @@ Answer the user's question with specific, actionable insights. Be concise, data-
     if(!text.trim()||loading)return;
     const userMsg={ role:"user", text };
     setMsgs(prev=>[...prev,userMsg]); setInput(""); setLoading(true);
-    try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000,
-          system:buildContext(),
-          messages:[...msgs.filter(m=>m.role!=="assistant"||msgs.indexOf(m)>0).map(m=>({ role:m.role, content:m.text })),{ role:"user", content:text }]
-        })
-      });
-      const data=await res.json();
-      const reply=data.content?.map(b=>b.text||"").join("")||"Sorry, I couldn't generate a response.";
-      setMsgs(prev=>[...prev,{ role:"assistant", text:reply }]);
-    }catch(e){ setMsgs(prev=>[...prev,{ role:"assistant", text:"⚠️ Connection error. Please try again." }]); }
+    
+    // Mock AI response - simulates 2 second delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const lowStock = products.filter(p => p.qty <= p.lowStock);
+    const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+    const topProduct = products.reduce((a, b) => a.price * a.qty > b.price * b.qty ? a : b, products[0]);
+    
+    // Generate contextual mock responses based on keywords in the question
+    let reply = "";
+    const q = text.toLowerCase();
+    
+    if (q.includes("reorder") || q.includes("low stock") || q.includes("order")) {
+      reply = `Based on your current inventory data, here are my reorder recommendations:\n\n${lowStock.length > 0 
+        ? `**Urgent Reorders Needed:**\n${lowStock.map(p => `- **${p.name}** (SKU: ${p.sku}): Only ${p.qty} left, below your ${p.lowStock} unit threshold. Suggest ordering 20-30 units from ${p.supplier}.`).join("\n")}`
+        : "Great news! All products are currently above their low stock thresholds."}\n\n**Tip:** Consider setting up automatic reorder points for your fastest-moving items to avoid stockouts.`;
+    } else if (q.includes("forecast") || q.includes("sales") || q.includes("predict")) {
+      reply = `**Sales Forecast Analysis:**\n\nBased on your ${sales.length} recent transactions totaling $${totalRevenue.toFixed(2)}:\n\n- **Average transaction value:** $${(totalRevenue / Math.max(sales.length, 1)).toFixed(2)}\n- **Top performer:** ${topProduct?.name || "N/A"} shows strong demand\n- **Projected weekly revenue:** $${(totalRevenue * 1.15).toFixed(2)} (estimated 15% growth)\n\n**Recommendation:** Stock up on your top 3 sellers before the weekend rush.`;
+    } else if (q.includes("margin") || q.includes("profit") || q.includes("best")) {
+      const sorted = [...products].sort((a, b) => ((b.price - b.cost) / b.price) - ((a.price - a.cost) / a.price));
+      reply = `**Margin Analysis:**\n\nYour top products by profit margin:\n\n${sorted.slice(0, 5).map((p, i) => `${i + 1}. **${p.name}** - ${(((p.price - p.cost) / p.price) * 100).toFixed(1)}% margin ($${(p.price - p.cost).toFixed(2)} profit per unit)`).join("\n")}\n\n**Insight:** Focus marketing efforts on high-margin items. Consider bundling lower-margin products with these winners.`;
+    } else if (q.includes("health") || q.includes("summary") || q.includes("overview")) {
+      reply = `**Inventory Health Summary:**\n\n- **Total SKUs:** ${products.length} products across ${[...new Set(products.map(p => p.category))].length} categories\n- **Stock alerts:** ${lowStock.length} items need attention\n- **Total inventory value:** $${products.reduce((sum, p) => sum + p.cost * p.qty, 0).toFixed(2)}\n- **Potential revenue:** $${products.reduce((sum, p) => sum + p.price * p.qty, 0).toFixed(2)}\n- **Recent sales:** ${sales.length} transactions, $${totalRevenue.toFixed(2)} total\n\n**Overall Status:** ${lowStock.length === 0 ? "Healthy - all stock levels optimal" : `Attention needed - ${lowStock.length} items below threshold`}`;
+    } else {
+      reply = `Thanks for your question about "${text}"\n\n**Quick Inventory Snapshot:**\n- ${products.length} products in stock\n- ${lowStock.length} items need reordering\n- $${totalRevenue.toFixed(2)} in recent sales\n\nI can help you with:\n- Reorder recommendations\n- Sales forecasting\n- Margin analysis\n- Inventory health checks\n\nTry asking something like "Which products should I reorder?" or "What are my best margins?"`;
+    }
+    
+    setMsgs(prev=>[...prev,{ role:"assistant", text:reply }]);
     setLoading(false);
   };
 
