@@ -327,63 +327,62 @@ function POS({ products, setProducts, setSales, addHistory }) {
   );
 
   return(
-    <div style={{ display:"flex", gap:18, height:"calc(100vh - 160px)", minHeight:500 }}>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:14, overflow:"hidden" }}>
-        <h1 style={{ margin:0, fontSize:22, fontWeight:900 }}>Point of Sale</h1>
-        {/* Barcode scanner */}
-        <div style={{ background:C.surfaceAlt, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px" }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}><Icon d={IC.scan} size={14}/>Barcode / SKU Scanner</div>
-          <div style={{ display:"flex", gap:8 }}>
-            <input ref={scanRef} value={scanInput} onChange={e=>setScanInput(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter")handleScan(); }} placeholder="Type or scan SKU, press Enter…" style={{ flex:1, background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 12px", color:C.text, fontSize:13, outline:"none", fontFamily:"monospace" }} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border}/>
-            <Btn onClick={handleScan} small><Icon d={IC.scan} size={14}/>Scan</Btn>
-          </div>
-          {scanMsg&&<div style={{ marginTop:6, fontSize:12, color:scanMsg.startsWith("✓")?C.green:C.red, fontFamily:"monospace" }}>{scanMsg}</div>}
+    <div style={{ display:"flex", flexDirection:"column", gap:14, width:"100%", maxWidth:"100%", overflowX:"hidden" }}>
+      <h1 style={{ margin:0, fontSize:22, fontWeight:900 }}>Point of Sale</h1>
+      {/* Barcode scanner */}
+      <div style={{ background:C.surfaceAlt, border:`1px solid ${C.border}`, borderRadius:10, padding:"12px 16px" }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.textMuted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}><Icon d={IC.scan} size={14}/>Barcode / SKU Scanner</div>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <input ref={scanRef} value={scanInput} onChange={e=>setScanInput(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter")handleScan(); }} placeholder="Type or scan SKU, press Enter…" style={{ flex:"1 1 200px", minWidth:0, background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 12px", color:C.text, fontSize:13, outline:"none", fontFamily:"monospace", boxSizing:"border-box" }} onFocus={e=>e.target.style.borderColor=C.accent} onBlur={e=>e.target.style.borderColor=C.border}/>
+          <Btn onClick={handleScan} small><Icon d={IC.scan} size={14}/>Scan</Btn>
         </div>
-        <div style={{ position:"relative" }}>
-          <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textMuted }}><Icon d={IC.search} size={15}/></span>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products…" style={{ width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 13px 9px 38px",color:C.text,fontSize:13,outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/>
-        </div>
-        <div style={{ flex:1,overflowY:"auto",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(148px,1fr))",gap:10,alignContent:"start" }}>
-          {filtered.map(p=>{ const inCart=cart.find(c=>c.id===p.id); return(
-            <div key={p.id} onClick={()=>addToCart(p)} style={{ background:inCart?C.accentDim:C.surface, border:`1px solid ${inCart?C.accent:C.border}`, borderRadius:10, padding:14, cursor:"pointer", transition:"all 0.15s", display:"flex", flexDirection:"column", gap:7 }} onMouseEnter={e=>{ if(!inCart)e.currentTarget.style.borderColor=C.accent; }} onMouseLeave={e=>{ if(!inCart)e.currentTarget.style.borderColor=C.border; }}>
-              <div style={{ fontSize:26, textAlign:"center" }}>{EMOJI[p.category]||"📦"}</div>
-              <div style={{ fontSize:12, fontWeight:700, lineHeight:1.3 }}>{p.name}</div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <span style={{ color:C.green,fontWeight:800,fontFamily:"monospace",fontSize:14 }}>{fmt(p.price)}</span>
-                <span style={{ fontSize:11,color:C.textMuted }}>×{p.qty}</span>
-              </div>
-              {inCart&&<Badge color={C.accent}>×{inCart.qty}</Badge>}
-            </div>
-          ); })}
-        </div>
+        {scanMsg&&<div style={{ marginTop:6, fontSize:12, color:scanMsg.startsWith("✓")?C.green:C.red, fontFamily:"monospace" }}>{scanMsg}</div>}
       </div>
-      <div style={{ width:300, display:"flex", flexDirection:"column", gap:10 }}>
-        <Card style={{ flex:1, display:"flex", flexDirection:"column", gap:10, overflowY:"auto" }}>
-          <h3 style={{ margin:0, fontSize:13, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.05em", color:C.textMuted }}><Icon d={IC.cart} size={14}/> Cart ({cart.length})</h3>
-          {cart.length===0?<div style={{ flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:C.textMuted,fontSize:13 }}>Tap products to add</div>:
-          <div style={{ display:"flex",flexDirection:"column",gap:6,flex:1 }}>{cart.map(c=>(
-            <div key={c.id} style={{ display:"flex",alignItems:"center",gap:7,padding:"8px 0",borderBottom:`1px solid ${C.border}33` }}>
-              <div style={{ flex:1 }}><div style={{ fontSize:12,fontWeight:600 }}>{c.name}</div><div style={{ fontSize:11,color:C.textMuted,fontFamily:"monospace" }}>{fmt(c.price)}</div></div>
-              <div style={{ display:"flex",alignItems:"center",gap:4 }}><Btn onClick={()=>updateQty(c.id,-1)} variant="secondary" small>−</Btn><span style={{ fontSize:13,fontWeight:700,minWidth:18,textAlign:"center" }}>{c.qty}</span><Btn onClick={()=>updateQty(c.id,1)} variant="secondary" small>+</Btn></div>
-              <span style={{ fontSize:12,fontWeight:700,fontFamily:"monospace",color:C.green,minWidth:52,textAlign:"right" }}>{fmt(c.price*c.qty)}</span>
-            </div>
-          ))}</div>}
-        </Card>
-        <Card>
-          <div style={{ display:"flex",gap:10,marginBottom:10 }}>
-            <Input label="Discount %" value={String(discount)} onChange={v=>setDiscount(+v)} type="number" style={{ flex:1 }}/>
-            <Input label="Tax %" value={String(tax)} onChange={v=>setTax(+v)} type="number" style={{ flex:1 }}/>
-          </div>
-          <div style={{ display:"flex",flexDirection:"column",gap:4,marginBottom:14,fontSize:13 }}>
-            <div style={{ display:"flex",justifyContent:"space-between" }}><span style={{ color:C.textMuted }}>Subtotal</span><span style={{ fontFamily:"monospace" }}>{fmt(sub)}</span></div>
-            {discount>0&&<div style={{ display:"flex",justifyContent:"space-between",color:C.red }}><span>Discount {discount}%</span><span style={{ fontFamily:"monospace" }}>−{fmt(disc)}</span></div>}
-            <div style={{ display:"flex",justifyContent:"space-between",color:C.textMuted }}><span>Tax {tax}%</span><span style={{ fontFamily:"monospace" }}>+{fmt(taxAmt)}</span></div>
-            <div style={{ display:"flex",justifyContent:"space-between",fontWeight:800,fontSize:17,marginTop:8,borderTop:`1px solid ${C.border}`,paddingTop:10 }}><span>Total</span><span style={{ color:C.green,fontFamily:"monospace" }}>{fmt(total)}</span></div>
-          </div>
-          <Sel label="Payment" value={payment} onChange={setPayment} options={["Cash","Card","Mobile"]} style={{ marginBottom:10 }}/>
-          <Btn onClick={checkout} disabled={!cart.length} style={{ width:"100%",justifyContent:"center" }}><Icon d={IC.check} size={15}/>Confirm Sale</Btn>
-        </Card>
+      <div style={{ position:"relative" }}>
+        <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:C.textMuted }}><Icon d={IC.search} size={15}/></span>
+        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products…" style={{ width:"100%",background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,padding:"9px 13px 9px 38px",color:C.text,fontSize:13,outline:"none",fontFamily:"inherit",boxSizing:"border-box" }}/>
       </div>
+      {/* Product Grid */}
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10 }}>
+        {filtered.map(p=>{ const inCart=cart.find(c=>c.id===p.id); return(
+          <div key={p.id} onClick={()=>addToCart(p)} style={{ background:inCart?C.accentDim:C.surface, border:`1px solid ${inCart?C.accent:C.border}`, borderRadius:10, padding:12, cursor:"pointer", transition:"all 0.15s", display:"flex", flexDirection:"column", gap:6 }}>
+            <div style={{ fontSize:24, textAlign:"center" }}>{EMOJI[p.category]||"📦"}</div>
+            <div style={{ fontSize:11, fontWeight:700, lineHeight:1.3 }}>{p.name}</div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ color:C.green,fontWeight:800,fontFamily:"monospace",fontSize:13 }}>{fmt(p.price)}</span>
+              <span style={{ fontSize:10,color:C.textMuted }}>×{p.qty}</span>
+            </div>
+            {inCart&&<Badge color={C.accent}>×{inCart.qty}</Badge>}
+          </div>
+        ); })}
+      </div>
+      {/* Cart Section */}
+      <Card style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        <h3 style={{ margin:0, fontSize:13, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.05em", color:C.textMuted, display:"flex", alignItems:"center", gap:6 }}><Icon d={IC.cart} size={14}/> Cart ({cart.length})</h3>
+        {cart.length===0?<div style={{ padding:"20px 0",textAlign:"center",color:C.textMuted,fontSize:13 }}>Tap products to add</div>:
+        <div style={{ display:"flex",flexDirection:"column",gap:6 }}>{cart.map(c=>(
+          <div key={c.id} style={{ display:"flex",alignItems:"center",gap:7,padding:"8px 0",borderBottom:`1px solid ${C.border}33`,flexWrap:"wrap" }}>
+            <div style={{ flex:"1 1 120px",minWidth:0 }}><div style={{ fontSize:12,fontWeight:600 }}>{c.name}</div><div style={{ fontSize:11,color:C.textMuted,fontFamily:"monospace" }}>{fmt(c.price)}</div></div>
+            <div style={{ display:"flex",alignItems:"center",gap:4 }}><Btn onClick={()=>updateQty(c.id,-1)} variant="secondary" small>−</Btn><span style={{ fontSize:13,fontWeight:700,minWidth:18,textAlign:"center" }}>{c.qty}</span><Btn onClick={()=>updateQty(c.id,1)} variant="secondary" small>+</Btn></div>
+            <span style={{ fontSize:12,fontWeight:700,fontFamily:"monospace",color:C.green,minWidth:52,textAlign:"right" }}>{fmt(c.price*c.qty)}</span>
+          </div>
+        ))}</div>}
+      </Card>
+      {/* Totals & Checkout */}
+      <Card>
+        <div style={{ display:"flex",gap:10,marginBottom:10,flexWrap:"wrap" }}>
+          <Input label="Discount %" value={String(discount)} onChange={v=>setDiscount(+v)} type="number" style={{ flex:"1 1 80px",minWidth:80 }}/>
+          <Input label="Tax %" value={String(tax)} onChange={v=>setTax(+v)} type="number" style={{ flex:"1 1 80px",minWidth:80 }}/>
+        </div>
+        <div style={{ display:"flex",flexDirection:"column",gap:4,marginBottom:14,fontSize:13 }}>
+          <div style={{ display:"flex",justifyContent:"space-between" }}><span style={{ color:C.textMuted }}>Subtotal</span><span style={{ fontFamily:"monospace" }}>{fmt(sub)}</span></div>
+          {discount>0&&<div style={{ display:"flex",justifyContent:"space-between",color:C.red }}><span>Discount {discount}%</span><span style={{ fontFamily:"monospace" }}>−{fmt(disc)}</span></div>}
+          <div style={{ display:"flex",justifyContent:"space-between",color:C.textMuted }}><span>Tax {tax}%</span><span style={{ fontFamily:"monospace" }}>+{fmt(taxAmt)}</span></div>
+          <div style={{ display:"flex",justifyContent:"space-between",fontWeight:800,fontSize:17,marginTop:8,borderTop:`1px solid ${C.border}`,paddingTop:10 }}><span>Total</span><span style={{ color:C.green,fontFamily:"monospace" }}>{fmt(total)}</span></div>
+        </div>
+        <Sel label="Payment" value={payment} onChange={setPayment} options={["Cash","Card","Mobile"]} style={{ marginBottom:10 }}/>
+        <Btn onClick={checkout} disabled={!cart.length} style={{ width:"100%",justifyContent:"center" }}><Icon d={IC.check} size={15}/>Confirm Sale</Btn>
+      </Card>
     </div>
   );
 }
