@@ -735,8 +735,10 @@ function Reports({ sales, products }) {
 }
 
 // ── ROOT ───────────────────────────────────────────────────────
+type PageId = "dashboard" | "products" | "pos" | "orders" | "history" | "suppliers" | "reports" | "ai";
+
 export default function App() {
-  const [page,setPage]=useState("dashboard");
+  const [page, setPage] = useState<PageId>("dashboard");
   const [products,setProducts]=useState(INIT_PRODUCTS);
   const [suppliers,setSuppliers]=useState(INIT_SUPPLIERS);
   const [sales,setSales]=useState(INIT_SALES);
@@ -745,9 +747,9 @@ export default function App() {
   const addHistory=(h: Record<string, unknown>)=>setHistory(prev=>[...prev,{ id:uid(),...h }]);
   const lowCount=products.filter(p=>p.qty<=p.lowStock).length;
 
-  const NAV=[
-    { id:"dashboard",  label:"Dashboard",    icon:IC.dash   },
-    { id:"products",   label:"Products",     icon:IC.tag    },
+  const NAV: Array<{id: PageId; label: string; icon: string}> = [
+    { id:"dashboard",  label:"Home",    icon:IC.dash   },
+    { id:"products",   label:"Items",     icon:IC.tag    },
     { id:"pos",        label:"POS",          icon:IC.pos    },
     { id:"orders",     label:"Orders", icon:IC.po  },
     { id:"history",    label:"History",icon:IC.history},
@@ -756,26 +758,8 @@ export default function App() {
     { id:"ai",         label:"AI",   icon:IC.ai     },
   ];
 
-  const handleNavClick = (id: string) => {
-    setPage(id);
-  };
-
-  const renderPage = () => {
-    switch(page) {
-      case "dashboard": return <Dashboard products={products} sales={sales}/>;
-      case "products": return <Products products={products} setProducts={setProducts}/>;
-      case "pos": return <POS products={products} setProducts={setProducts} setSales={setSales} addHistory={addHistory}/>;
-      case "orders": return <PurchaseOrders orders={orders} setOrders={setOrders} products={products} setProducts={setProducts} suppliers={suppliers} addHistory={addHistory}/>;
-      case "history": return <StockHistory history={history} products={products}/>;
-      case "suppliers": return <Suppliers suppliers={suppliers} setSuppliers={setSuppliers}/>;
-      case "reports": return <Reports sales={sales} products={products}/>;
-      case "ai": return <AIAssistant products={products} sales={sales} orders={orders}/>;
-      default: return <Dashboard products={products} sales={sales}/>;
-    }
-  };
-
   return(
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif", paddingBottom:70 }}>
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif", paddingBottom:80, width:"100%", maxWidth:"100%", overflowX:"hidden" }}>
       {/* Header */}
       <header style={{ 
         position:"sticky", 
@@ -804,8 +788,15 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main style={{ padding:"20px 16px 24px" }}>
-        {renderPage()}
+      <main style={{ padding:"20px 16px 24px", width:"100%", maxWidth:"100%", boxSizing:"border-box" }}>
+        {page === "dashboard" && <Dashboard products={products} sales={sales}/>}
+        {page === "products" && <Products products={products} setProducts={setProducts}/>}
+        {page === "pos" && <POS products={products} setProducts={setProducts} setSales={setSales} addHistory={addHistory}/>}
+        {page === "orders" && <PurchaseOrders orders={orders} setOrders={setOrders} products={products} setProducts={setProducts} suppliers={suppliers} addHistory={addHistory}/>}
+        {page === "history" && <StockHistory history={history} products={products}/>}
+        {page === "suppliers" && <Suppliers suppliers={suppliers} setSuppliers={setSuppliers}/>}
+        {page === "reports" && <Reports sales={sales} products={products}/>}
+        {page === "ai" && <AIAssistant products={products} sales={sales} orders={orders}/>}
       </main>
 
       {/* Bottom Tab Navigation */}
@@ -814,59 +805,49 @@ export default function App() {
         bottom:0, 
         left:0, 
         right:0, 
-        zIndex:100,
+        zIndex:1000,
         background:C.surface, 
         borderTop:`1px solid ${C.border}`,
-        display:"flex",
-        justifyContent:"space-around",
-        alignItems:"center",
-        padding:"6px 0 10px",
-        paddingBottom:"max(10px, env(safe-area-inset-bottom))"
+        display:"grid",
+        gridTemplateColumns:"repeat(8, 1fr)",
+        padding:"8px 4px",
+        paddingBottom:"max(8px, env(safe-area-inset-bottom))"
       }}>
-        {NAV.map(n => {
-          const active = page === n.id;
-          return (
-            <button 
-              key={n.id}
-              type="button"
-              onClick={() => handleNavClick(n.id)}
-              style={{ 
-                flex:1,
-                display:"flex", 
-                flexDirection:"column", 
-                alignItems:"center", 
-                gap:3,
-                padding:"6px 4px",
-                border:"none",
-                background:"transparent",
-                cursor:"pointer",
-                WebkitTapHighlightColor:"transparent",
-                touchAction:"manipulation"
-              }}
-            >
-              <div style={{
-                width:36,
-                height:36,
-                borderRadius:10,
-                display:"flex",
-                alignItems:"center",
-                justifyContent:"center",
-                background: active ? C.accent : "transparent",
-                transition:"background 0.15s"
-              }}>
-                <Icon d={n.icon} size={18} color={active ? "#fff" : C.textMuted}/>
-              </div>
-              <span style={{ 
-                fontSize:9, 
-                fontWeight:active ? 700 : 500, 
-                color: active ? C.accent : C.textMuted,
-                fontFamily:"inherit"
-              }}>
-                {n.label}
-              </span>
-            </button>
-          );
-        })}
+        {NAV.map(n => (
+          <button 
+            key={n.id}
+            type="button"
+            onClick={() => setPage(n.id)}
+            style={{ 
+              display:"flex", 
+              flexDirection:"column", 
+              alignItems:"center", 
+              justifyContent:"center",
+              gap:2,
+              padding:"4px 2px",
+              border:"none",
+              background: page === n.id ? C.accentDim : "transparent",
+              borderRadius:8,
+              cursor:"pointer",
+              WebkitTapHighlightColor:"transparent",
+              touchAction:"manipulation",
+              outline:"none",
+              WebkitAppearance:"none",
+              MozAppearance:"none"
+            } as React.CSSProperties}
+          >
+            <Icon d={n.icon} size={20} color={page === n.id ? C.accent : C.textMuted}/>
+            <span style={{ 
+              fontSize:8, 
+              fontWeight: page === n.id ? 700 : 500, 
+              color: page === n.id ? C.accent : C.textMuted,
+              fontFamily:"inherit",
+              lineHeight:1
+            }}>
+              {n.label}
+            </span>
+          </button>
+        ))}
       </nav>
     </div>
   );
