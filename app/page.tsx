@@ -760,6 +760,10 @@ export default function App() {
   const [sales,setSales]=useState(INIT_SALES);
   const [orders,setOrders]=useState(INIT_PURCHASE_ORDERS);
   const [history,setHistory]=useState(INIT_HISTORY);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const addHistory=(h: Record<string, unknown>)=>setHistory(prev=>[...prev,{ id:uid(),...h }]);
   const lowCount=products.filter(p=>p.qty<=p.lowStock).length;
 
@@ -774,36 +778,133 @@ export default function App() {
     { id:"ai",         label:"AI",   icon:IC.ai     },
   ];
 
+  // Detect screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Handle click outside sidebar on mobile
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node) && sidebarOpen) {
+        if (isMobile) setSidebarOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sidebarOpen, isMobile]);
+
+  // Close sidebar on nav item click (mobile only)
+  const handleNavClick = (id: PageId) => {
+    setPage(id);
+    if (isMobile) setSidebarOpen(false);
+  };
+
+  const sidebarWidth = sidebarCollapsed ? 80 : 240;
+
   return(
     <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif", width:"100%", maxWidth:"100%", overflowX:"hidden", display:"flex", flexDirection:"column" }}>
+      {/* Sidebar Backdrop (mobile only) */}
+      {sidebarOpen && isMobile && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          style={{ 
+            position:"fixed", 
+            inset:0, 
+            background:"rgba(0,0,0,0.5)", 
+            zIndex:999
+          }}
+        />
+      )}
+
       {/* Left Sidebar Navigation */}
-      <nav style={{ 
-        position:"fixed", 
-        left:0, 
-        top:0, 
-        bottom:0,
-        width:240,
-        zIndex:1000,
-        background:C.surface, 
-        borderRight:`1px solid ${C.border}`,
-        display:"flex",
-        flexDirection:"column",
-        padding:"16px 8px",
-        overflowY:"auto",
-        gap:8
-      }}>
+      <nav ref={sidebarRef}
+        style={{ 
+          position:"fixed", 
+          left:0, 
+          top:0, 
+          bottom:0,
+          width: isMobile ? 240 : (sidebarCollapsed ? 80 : 240),
+          zIndex:1000,
+          background:C.surface, 
+          borderRight:`1px solid ${C.border}`,
+          display:"flex",
+          flexDirection:"column",
+          padding:"16px 8px",
+          overflowY:"auto",
+          gap:8,
+          transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
+          transition: "transform 0.3s ease, width 0.3s ease"
+        }}>
+        {/* Close button (mobile only) */}
+        {isMobile && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              display:"flex",
+              alignItems:"center",
+              justifyContent:"center",
+              width:32,
+              height:32,
+              border:"none",
+              background:"transparent",
+              cursor:"pointer",
+              color:C.textMuted,
+              marginLeft:"auto",
+              marginBottom:8,
+              WebkitTapHighlightColor:"transparent"
+            }}
+          >
+            <Icon d={IC.x} size={20} color={C.textMuted}/>
+          </button>
+        )}
+
+        {/* Collapse toggle (desktop only) */}
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            style={{
+              display:"flex",
+              alignItems:"center",
+              justifyContent:"center",
+              width:32,
+              height:32,
+              border:"none",
+              background:"transparent",
+              cursor:"pointer",
+              color:C.textMuted,
+              marginLeft:"auto",
+              marginBottom:8,
+              WebkitTapHighlightColor:"transparent"
+            }}
+            title={sidebarCollapsed ? "Expand" : "Collapse"}
+          >
+            <Icon d="M15 18l-6-6 6-6" size={18} color={C.textMuted} sw={2}/>
+          </button>
+        )}
+
+        {/* Navigation items */}
         {NAV.map(n => (
           <button 
             key={n.id}
             type="button"
-            onClick={() => setPage(n.id)}
+            onClick={() => handleNavClick(n.id)}
             style={{ 
               display:"flex", 
               flexDirection:"row", 
               alignItems:"center", 
-              justifyContent:"flex-start",
-              gap:12,
-              padding:"12px 14px",
+              justifyContent: (sidebarCollapsed && !isMobile) ? "center" : "flex-start",
+              gap: (sidebarCollapsed && !isMobile) ? 0 : 12,
+              padding: (sidebarCollapsed && !isMobile) ? "12px" : "12px 14px",
               border:"none",
               background: page === n.id ? C.accentDim : "transparent",
               borderRadius:8,
@@ -812,20 +913,24 @@ export default function App() {
               touchAction:"manipulation",
               outline:"none",
               WebkitAppearance:"none",
-              MozAppearance:"none"
+              MozAppearance:"none",
+              position:"relative"
             } as React.CSSProperties}
+            title={(sidebarCollapsed && !isMobile) ? n.label : undefined}
           >
             <Icon d={n.icon} size={20} color={page === n.id ? C.accent : C.textMuted}/>
-            <span style={{ 
-              fontSize:13, 
-              fontWeight: page === n.id ? 700 : 500, 
-              color: page === n.id ? C.accent : C.textMuted,
-              fontFamily:"inherit",
-              lineHeight:1,
-              whiteSpace:"nowrap"
-            }}>
-              {n.label}
-            </span>
+            {!(sidebarCollapsed && !isMobile) && (
+              <span style={{ 
+                fontSize:13, 
+                fontWeight: page === n.id ? 700 : 500, 
+                color: page === n.id ? C.accent : C.textMuted,
+                fontFamily:"inherit",
+                lineHeight:1,
+                whiteSpace:"nowrap"
+              }}>
+                {n.label}
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -841,8 +946,30 @@ export default function App() {
         display:"flex",
         alignItems:"center",
         gap:12,
-        marginLeft:240
+        marginLeft: isMobile ? 0 : sidebarWidth
       }}>
+        {/* Hamburger button (mobile only) */}
+        {isMobile && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{
+              display:"flex",
+              alignItems:"center",
+              justifyContent:"center",
+              width:32,
+              height:32,
+              border:"none",
+              background:"transparent",
+              cursor:"pointer",
+              color:C.text,
+              WebkitTapHighlightColor:"transparent"
+            }}
+          >
+            <Icon d="M3 6h18 M3 12h18 M3 18h18" size={20} color={C.text} sw={2}/>
+          </button>
+        )}
+        
         <div style={{ width:32,height:32,borderRadius:8,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center" }}>
           <Icon d={IC.pkg} size={16} color="#fff" sw={2.5}/>
         </div>
@@ -859,7 +986,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main style={{ padding:"20px 16px 24px", width:"100%", maxWidth:"100%", boxSizing:"border-box", marginLeft:240 }}>
+      <main style={{ padding:"20px 16px 24px", width:"100%", maxWidth:"100%", boxSizing:"border-box", marginLeft: isMobile ? 0 : sidebarWidth }}>
         {page === "dashboard" && <Dashboard products={products} sales={sales}/>}
         {page === "products" && <Products products={products} setProducts={setProducts}/>}
         {page === "pos" && <POS products={products} setProducts={setProducts} setSales={setSales} addHistory={addHistory}/>}
