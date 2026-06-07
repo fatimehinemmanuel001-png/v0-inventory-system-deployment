@@ -775,7 +775,61 @@ export default function App() {
   ];
 
   return(
-    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif", paddingBottom:80, width:"100%", maxWidth:"100%", overflowX:"hidden" }}>
+    <div style={{ minHeight:"100vh", background:C.bg, color:C.text, fontFamily:"'Inter','Segoe UI',sans-serif", width:"100%", maxWidth:"100%", overflowX:"hidden", display:"flex", flexDirection:"column" }}>
+      {/* Left Sidebar Navigation */}
+      <nav style={{ 
+        position:"fixed", 
+        left:0, 
+        top:0, 
+        bottom:0,
+        width:240,
+        zIndex:1000,
+        background:C.surface, 
+        borderRight:`1px solid ${C.border}`,
+        display:"flex",
+        flexDirection:"column",
+        padding:"16px 8px",
+        overflowY:"auto",
+        gap:8
+      }}>
+        {NAV.map(n => (
+          <button 
+            key={n.id}
+            type="button"
+            onClick={() => setPage(n.id)}
+            style={{ 
+              display:"flex", 
+              flexDirection:"row", 
+              alignItems:"center", 
+              justifyContent:"flex-start",
+              gap:12,
+              padding:"12px 14px",
+              border:"none",
+              background: page === n.id ? C.accentDim : "transparent",
+              borderRadius:8,
+              cursor:"pointer",
+              WebkitTapHighlightColor:"transparent",
+              touchAction:"manipulation",
+              outline:"none",
+              WebkitAppearance:"none",
+              MozAppearance:"none"
+            } as React.CSSProperties}
+          >
+            <Icon d={n.icon} size={20} color={page === n.id ? C.accent : C.textMuted}/>
+            <span style={{ 
+              fontSize:13, 
+              fontWeight: page === n.id ? 700 : 500, 
+              color: page === n.id ? C.accent : C.textMuted,
+              fontFamily:"inherit",
+              lineHeight:1,
+              whiteSpace:"nowrap"
+            }}>
+              {n.label}
+            </span>
+          </button>
+        ))}
+      </nav>
+
       {/* Header */}
       <header style={{ 
         position:"sticky", 
@@ -786,7 +840,8 @@ export default function App() {
         padding:"12px 16px",
         display:"flex",
         alignItems:"center",
-        gap:12
+        gap:12,
+        marginLeft:240
       }}>
         <div style={{ width:32,height:32,borderRadius:8,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center" }}>
           <Icon d={IC.pkg} size={16} color="#fff" sw={2.5}/>
@@ -804,7 +859,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main style={{ padding:"20px 16px 24px", width:"100%", maxWidth:"100%", boxSizing:"border-box" }}>
+      <main style={{ padding:"20px 16px 24px", width:"100%", maxWidth:"100%", boxSizing:"border-box", marginLeft:240 }}>
         {page === "dashboard" && <Dashboard products={products} sales={sales}/>}
         {page === "products" && <Products products={products} setProducts={setProducts}/>}
         {page === "pos" && <POS products={products} setProducts={setProducts} setSales={setSales} addHistory={addHistory}/>}
@@ -814,57 +869,6 @@ export default function App() {
         {page === "reports" && <Reports sales={sales} products={products}/>}
         {page === "ai" && <AIAssistant products={products} sales={sales} orders={orders}/>}
       </main>
-
-      {/* Bottom Tab Navigation */}
-      <nav style={{ 
-        position:"fixed", 
-        bottom:0, 
-        left:0, 
-        right:0, 
-        zIndex:1000,
-        background:C.surface, 
-        borderTop:`1px solid ${C.border}`,
-        display:"grid",
-        gridTemplateColumns:"repeat(8, 1fr)",
-        padding:"8px 4px",
-        paddingBottom:"max(8px, env(safe-area-inset-bottom))"
-      }}>
-        {NAV.map(n => (
-          <button 
-            key={n.id}
-            type="button"
-            onClick={() => setPage(n.id)}
-            style={{ 
-              display:"flex", 
-              flexDirection:"column", 
-              alignItems:"center", 
-              justifyContent:"center",
-              gap:2,
-              padding:"4px 2px",
-              border:"none",
-              background: page === n.id ? C.accentDim : "transparent",
-              borderRadius:8,
-              cursor:"pointer",
-              WebkitTapHighlightColor:"transparent",
-              touchAction:"manipulation",
-              outline:"none",
-              WebkitAppearance:"none",
-              MozAppearance:"none"
-            } as React.CSSProperties}
-          >
-            <Icon d={n.icon} size={20} color={page === n.id ? C.accent : C.textMuted}/>
-            <span style={{ 
-              fontSize:8, 
-              fontWeight: page === n.id ? 700 : 500, 
-              color: page === n.id ? C.accent : C.textMuted,
-              fontFamily:"inherit",
-              lineHeight:1
-            }}>
-              {n.label}
-            </span>
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }
